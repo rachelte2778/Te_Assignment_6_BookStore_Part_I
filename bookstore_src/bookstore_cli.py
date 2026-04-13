@@ -21,7 +21,10 @@ def print_menu() -> None:
     print("5. Add a new book")
     print("6. Update a book price")
     print("7. Delete a book")
-    print("8. Quit")
+    print("8. Search by author")
+    print("9. Available to read now")
+    print("10. Books within a price range")
+    print("11. Quit")
 
 
 def welcome_screen() -> None:
@@ -186,6 +189,81 @@ def delete_book(cursor: sqlite3.Cursor) -> None:
         print("Invalid input.")
 
 
+# Additional features not included in the demo
+def search_by_author(cursor: sqlite3.Cursor) -> None:
+    keyword = input("Enter an author's name: ").strip()
+
+    cursor.execute(
+        """
+        SELECT bookId, title, author, price
+        FROM book
+        WHERE author LIKE ?
+        ORDER BY author
+        """,
+        (f"%{keyword}%",)
+    )
+    rows = cursor.fetchall()
+
+    print_divider()
+    print("Matching books")
+
+    if rows:
+        for row in rows:
+            print(row)
+    else:
+        print("No books found.")
+
+
+def read_now(cursor: sqlite3.Cursor) -> None:
+
+    cursor.execute(
+        """
+        SELECT bookId, title, author, price, image
+        FROM book
+        WHERE readNow = 1
+        ORDER BY title
+        """
+    )
+    rows = cursor.fetchall()
+
+    print_divider()
+    print("Books that are available")
+
+    if rows:
+        for row in rows:
+            print(row)
+    else:
+        print("No books found.")
+
+
+def books_within_price_range(cursor: sqlite3.Cursor) -> None:
+    min_price = int(input("Enter a minimum price: ").strip())
+    max_price = int(input("Enter a maximum price: ").strip())
+    if min_price > max_price: 
+        print("Error: minimum price cannot be more than maximum. Please try again.")
+
+    cursor.execute(
+        """
+        SELECT bookId, title, author, price
+        FROM book
+        WHERE price > ? AND price < ?
+        ORDER BY price
+        """, 
+        (min_price, max_price)
+    ) 
+
+    rows = cursor.fetchall()
+
+    print_divider()
+    print("Matching books")
+
+    if rows: 
+        for row in rows: 
+            print(row)
+    else:
+        print("No books found within that range.") 
+        
+
 def main() -> None:
     with sqlite3.connect(DB_NAME) as connection:
         cursor = connection.cursor()
@@ -218,6 +296,15 @@ def main() -> None:
                 delete_book(cursor)
                 pause()
             elif choice == "8":
+                search_by_author(cursor)
+                pause()
+            elif choice == "9":
+                read_now(cursor)
+                pause()
+            elif choice == "10": 
+                books_within_price_range(cursor)
+                pause()
+            elif choice == "11":
                 print_divider()
                 print("Goodbye!")
                 break
